@@ -1,0 +1,28 @@
+{
+  "title": "Acme",
+  "host": {
+    "resource": "docker-01.acme.internal",
+    "label": "docker-01",
+    "interface": "eth0"
+  },
+  "sites": [
+    {"id": "shop", "label": "shop.acme.example", "url": "https://shop.acme.example", "service": "shop-web", "rum_service": "shop-web-rum", "resource": "shop-web", "namespace": "acme",
+     "routes": ["/", "/catalog", "/catalog/boots", "/product/trail-boot", "/cart", "/checkout", "/api/checkout"]},
+    {"id": "www", "label": "www.acme.example", "url": "https://www.acme.example", "service": "www-web", "rum_service": "www-web-rum", "resource": "www-web", "namespace": "acme",
+     "routes": ["/", "/about", "/pricing", "/contact", "/blog", "/api/contact"]},
+    {"id": "launch", "label": "launch.acme.example", "url": "https://launch.acme.example", "service": "launch-web", "rum_service": "launch-web-rum", "resource": "launch-web", "namespace": "acme",
+     "routes": ["/", "/features", "/waitlist", "/api/waitlist"]}
+  ],
+  "business": {
+    "checkout": {"site": "shop", "name": "Acme Shop", "route": "/api/checkout", "gateway": "api.stripe.com", "order_prefix": "AC"},
+    "cta": {"site": "www", "name": "Acme website", "cta": "footer:github", "target": "https://github.com/acme-example"},
+    "signup": {"site": "launch", "name": "Acme launch page", "route": "/api/waitlist", "smtp": "smtp.example.com:587"}
+  },
+  "dashboards": {
+    "web": "SRE - Services (APM)",
+    "infra": "SRE - Infrastructure RCA",
+    "business": "Executive - Business Impact",
+    "marketing": "Marketing - Web Traffic & RUM",
+    "exec": "Executive - Digital Experience"
+  }
+}

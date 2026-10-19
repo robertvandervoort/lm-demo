@@ -1,0 +1,34 @@
+# LogicMonitor demo console. Settings come from .env (copy .env.example),
+# the sites and scenarios from DEMO_CONFIG_JSON in .env or config/demo.json
+# (start from config/demo.example.json).
+#
+#   docker compose up -d --build
+#   open http://<BIND_ADDR>:<CONSOLE_PORT>/
+services:
+  lm-demo:
+    build: .
+    image: lm-demo:latest
+    container_name: ${CONTAINER_NAME:-lm-demo}
+    restart: unless-stopped
+    # Credentials: LOGICMONITOR_ACCESS_ID / LOGICMONITOR_ACCESS_KEY. By default they
+    # live in .env; point LM_ENV_FILE at a root-only file to keep them out of it.
+    env_file:
+      - ${LM_ENV_FILE:-.env}
+    environment:
+      LOGICMONITOR_ACCOUNT: ${LOGICMONITOR_ACCOUNT:?set LOGICMONITOR_ACCOUNT in .env}
+      LMOTEL_URL: ${LMOTEL_URL:?set LMOTEL_URL in .env}
+      DEMO_DURATION_MIN: ${DEMO_DURATION_MIN:-10}
+      DEMO_BASELINE: ${DEMO_BASELINE:-true}
+      LM_CREATE_RESOURCES: ${LM_CREATE_RESOURCES:-false}
+      DEMO_CONFIG_JSON: ${DEMO_CONFIG_JSON:-}
+      CONFIG_FILE: /app/config/demo.json
+      PORT: "8089"
+    volumes:
+      - ${CONFIG_DIR:-./config}:/app/config:ro
+    ports:
+      - "${BIND_ADDR:-127.0.0.1}:${CONSOLE_PORT:-8089}:8089"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

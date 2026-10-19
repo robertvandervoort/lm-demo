@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo Console</title>
+<style>
+  :root { --navy:#0b2447; --navy2:#122f5c; --blue:#1b6ac9; --blue2:#155cb0; --bg:#f3f5f8; --card:#fff; --ink:#1f2937; --muted:#6b7280; --line:#e3e7ee; --ok:#16a34a; --warn:#f59e0b; --crit:#dc2626; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif; background:var(--bg); color:var(--ink); font-size:14px; }
+  .rail { position:fixed; left:0; top:0; bottom:0; width:72px; background:var(--navy); color:#cfd8e6; display:flex; flex-direction:column; align-items:center; padding-top:10px; gap:6px; }
+  .rail .item { width:64px; padding:10px 0; text-align:center; font-size:10px; border-radius:6px; cursor:pointer; line-height:1.2; }
+  .rail .item.active { background:var(--blue); color:#fff; }
+  .rail .item .ico { display:block; font-size:18px; margin-bottom:3px; }
+  .rail .logo { margin-top:auto; padding:12px 0; font-size:9px; letter-spacing:.5px; color:#9fb0c8; text-align:center; }
+  .top { position:fixed; left:72px; right:0; top:0; height:48px; background:#fff; border-bottom:1px solid var(--line); display:flex; align-items:center; padding:0 18px; gap:14px; z-index:5; }
+  .top .crumb { font-weight:600; color:var(--navy); }
+  .top .crumb span { color:var(--muted); font-weight:400; }
+  .top .right { margin-left:auto; display:flex; gap:10px; align-items:center; color:var(--muted); font-size:12px; }
+  main { margin-left:72px; padding:64px 22px 40px; max-width:1240px; }
+  h1 { font-size:20px; margin:0 0 4px; color:var(--navy); }
+  .sub { color:var(--muted); margin-bottom:18px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr)); gap:16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:16px 18px; box-shadow:0 1px 2px rgba(16,24,40,.04); }
+  .card h2 { font-size:15px; margin:0 0 4px; color:var(--navy); display:flex; align-items:center; gap:8px; }
+  .card h2 .tag { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; padding:2px 7px; border-radius:10px; background:#e8f0fb; color:var(--blue2); }
+  .card p { margin:4px 0 10px; color:var(--muted); line-height:1.45; }
+  .btn { border:1px solid var(--blue); background:var(--blue); color:#fff; padding:8px 14px; border-radius:6px; font-weight:600; cursor:pointer; font-size:13px; }
+  .btn:hover { background:var(--blue2); }
+  .btn.secondary { background:#fff; color:var(--blue); }
+  .btn.warn { background:var(--warn); border-color:var(--warn); }
+  .btn.crit { background:var(--crit); border-color:var(--crit); }
+  .btn.ok { background:var(--ok); border-color:var(--ok); }
+  .btn.ghost { background:transparent; border-color:var(--line); color:var(--ink); }
+  .btn:disabled { opacity:.5; cursor:default; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:8px 0; }
+  .sites { display:grid; grid-template-columns:1fr 1fr; gap:4px 14px; margin:6px 0 10px; }
+  .sites label { display:flex; gap:8px; align-items:center; font-size:13px; }
+  .case { border-top:1px solid var(--line); padding:10px 0 6px; }
+  .case:first-of-type { border-top:0; }
+  .case h3 { margin:0 0 2px; font-size:13.5px; }
+  .case p { margin:0 0 8px; font-size:13px; }
+  .link { color:var(--blue); text-decoration:none; font-weight:600; font-size:13px; }
+  .status { position:sticky; top:62px; }
+  .sc { border:1px solid var(--line); border-radius:6px; padding:8px 10px; margin-bottom:8px; font-size:12.5px; }
+  .sc .name { font-weight:600; display:flex; justify-content:space-between; }
+  .bar { height:6px; background:#e8edf5; border-radius:3px; margin:6px 0; overflow:hidden; }
+  .bar i { display:block; height:100%; background:var(--blue); }
+  .sc.done .bar i { background:#9ca3af; }
+  .sc pre { margin:4px 0 0; font-size:11px; color:var(--muted); white-space:pre-wrap; max-height:80px; overflow:auto; }
+  .pill { display:inline-block; padding:1px 7px; border-radius:9px; font-size:11px; font-weight:600; }
+  .pill.run { background:#e7f6ec; color:#15803d; } .pill.bad { background:#fdecec; color:#b91c1c; } .pill.done { background:#eef0f4; color:#6b7280; }
+  .mono { font-family:Consolas,monospace; font-size:12px; }
+  #toast { position:fixed; right:18px; bottom:18px; background:var(--navy); color:#fff; padding:10px 14px; border-radius:6px; display:none; max-width:420px; font-size:13px; }
+  .steps { font-size:12.5px; color:var(--muted); margin:6px 0 0; padding-left:18px; }
+</style>
+</head>
+<body>
+<nav class="rail">
+  <div class="item active" data-go="web"><span class="ico">&#9783;</span>Web traffic</div>
+  <div class="item" data-go="infra"><span class="ico">&#9881;</span>Infra</div>
+  <div class="item" data-go="business"><span class="ico">&#9679;</span>Business</div>
+  <div class="item" data-go="status"><span class="ico">&#9632;</span>Activity</div>
+  <div class="logo"><span data-k="title"></span><br>DEMO CONSOLE</div>
+</nav>
+<header class="top">
+  <div class="crumb">Demo Console <span>&rsaquo; LogicMonitor scenarios for <span data-k="title"></span></span></div>
+  <div class="right"><span id="clock"></span><a class="link" id="portalLink" target="_blank">Open portal &rarr;</a></div>
+</header>
+<main>
+  <h1>Drive the demo</h1>
+  <div class="sub">Each button sends ten minutes (or the minutes set under Website traffic) of traces, logs and metrics straight to LogicMonitor (LM OTel collector and REST APIs). Nothing passes through your own OpenTelemetry collectors, so production telemetry stays clean.</div>
+  <div class="grid">
+    <div style="display:flex;flex-direction:column;gap:16px">
+
+      <section class="card" id="web">
+        <h2>Website traffic <span class="tag">Use case 1 &middot; Ops / app teams</span></h2>
+        <p>Realistic visitors on the public sites: server spans with routes and status codes, browser RUM (page views, Core Web Vitals, JS errors), and request logs that carry the trace id. <b>Peak</b> is a 6&times; surge with rising latency; <b>Error</b> injects 5xx responses with exceptions and matching error logs; <b>Normal</b> restores a calm baseline.</p>
+        <div class="sites" id="siteList"></div>
+        <div class="row">
+          <button class="btn ok" onclick="startWeb('normal')">Normal</button>
+          <button class="btn warn" onclick="startWeb('peak')">Peak</button>
+          <button class="btn crit" onclick="startWeb('error')">Error</button>
+          <span style="color:var(--muted);font-size:12px">Minutes <input id="minutes" type="number" value="10" min="1" max="60" style="width:52px"></span>
+        </div>
+        <div class="row">
+          <a class="btn secondary" id="dashWeb" target="_blank">Start here: <span data-k="dashboardNames.web">Services</span></a>
+          <a class="btn ghost" id="dashTraces" target="_blank">Traces</a>
+          <a class="btn ghost" id="dashLogs" target="_blank">Logs</a>
+        </div>
+        <ol class="steps"><li>Show the Services dashboard: request rate, errors, latency per service.</li><li>Click a failing service, open a trace, follow the exception to the log line with the same trace id.</li><li>Marketing dashboard: Web Vitals degrade while the error traffic runs.</li></ol>
+      </section>
+
+      <section class="card" id="infra">
+        <h2>Infrastructure on <span data-k="host.label">host</span> <span class="tag">Use case 2 &middot; Ops / SRE</span></h2>
+        <p>Host trouble on the Docker host that runs every site, with the knock-on effects in the applications. Metrics land on the <span data-k="host.label">host</span> resource as <i>Demo</i> datasources with alert thresholds; kernel and systemd logs land on <span data-k="host.label">host</span>; every service gets slower and some requests fail, with logs that carry the trace id.</p>
+        <div class="case">
+          <h3>Memory pressure and swap storm</h3>
+          <p>Available memory falls to 4 %, swap use climbs past 90 %, thousands of pages a second swap in and out, then the OOM killer takes postgres. Checkout and API latency climb 5&times; and database pools exhaust.</p>
+          <button class="btn crit" onclick="startInfra('memory','Memory pressure and swap storm')">Start memory pressure</button>
+        </div>
+        <div class="case">
+          <h3>Network degradation</h3>
+          <p>Packet loss on <span data-k="host.interface">eth0</span> reaches 18 %, latency jumps from 0.4 ms to 140 ms, TCP retransmits and interface errors spike, the edge proxy times out dialing origins. Users see resets and 503s.</p>
+          <button class="btn crit" onclick="startInfra('network','Network degradation on '+cfg.host.interface)">Start network degradation</button>
+        </div>
+        <div class="case">
+          <h3>CPU saturation, zombies and thread storm</h3>
+          <p>Load average climbs past 60, context switches hit 900k/s, a worker leaks hundreds of zombie processes and 30k threads, the scheduler throttles. Event loops block, requests time out.</p>
+          <button class="btn crit" onclick="startInfra('cpu','CPU saturation and zombie storm')">Start CPU strain</button>
+        </div>
+        <div class="row">
+          <a class="btn secondary" id="dashInfra" target="_blank">Start here: <span data-k="dashboardNames.infra">Infrastructure</span></a>
+          <a class="btn ghost" id="dashAlerts" target="_blank">Alerts</a>
+        </div>
+        <ol class="steps"><li>Infrastructure RCA dashboard: the host graphs bend first, the service latency and error graphs below bend with them.</li><li>Alerts: the Demo thresholds fire on <span data-k="host.label">host</span> within a few minutes.</li><li>Open a slow trace, then Logs on <span data-k="host.label">host</span> at the same minute: the kernel line explains it.</li></ol>
+      </section>
+
+      <section class="card" id="business">
+        <h2>Business impact <span class="tag">Use case 3 &middot; Executives</span></h2>
+        <p>Nothing is wrong with the infrastructure. The sites are up, the host is healthy, yet money and leads are being lost. Business KPIs are pushed per site as a <i>Demo: Business KPIs</i> datasource with thresholds, with the traces and logs that explain why.</p>
+        <div class="case" id="case-checkout">
+          <h3><span data-k="business.checkout.name"></span>: checkout fails</h3>
+          <p>The payment gateway call to <span data-k="business.checkout.gateway"></span> times out after 30 s. Checkouts return 502, conversion collapses from 97 % to near zero, revenue per minute goes with it, cart abandonment climbs. Site availability stays green.</p>
+          <button class="btn crit" onclick="startBiz('checkout', cfg.business.checkout.name+' checkout failures')">Break checkout</button>
+        </div>
+        <div class="case" id="case-cta">
+          <h3><span data-k="business.cta.name"></span>: a call-to-action link is a 404</h3>
+          <p>Every click on <span data-k="business.cta.cta"></span> (<span data-k="business.cta.target"></span>) lands on a 404. RUM records the click, the failed outbound link and the JS error; referral traffic drops to zero. No server is involved at all.</p>
+          <button class="btn crit" onclick="startBiz('cta', cfg.business.cta.name+' CTA link 404')">Break the link</button>
+        </div>
+        <div class="case" id="case-signup">
+          <h3><span data-k="business.signup.name"></span>: signups silently lost</h3>
+          <p>The signup form keeps returning 200, but the SMTP connection to <span data-k="business.signup.smtp"></span> is refused, so no confirmation email goes out and leads are lost while traffic looks perfectly normal. Only the business metric and a warning log reveal it.</p>
+          <button class="btn crit" onclick="startBiz('signup', cfg.business.signup.name+' confirmations lost')">Lose the leads</button>
+        </div>
+        <div class="row">
+          <a class="btn secondary" id="dashBiz" target="_blank">Start here: <span data-k="dashboardNames.business">Business</span></a>
+          <a class="btn ghost" id="dashExec" target="_blank"><span data-k="dashboardNames.exec"></span></a>
+          <a class="btn ghost" id="dashMarketing" target="_blank"><span data-k="dashboardNames.marketing"></span></a>
+        </div>
+        <ol class="steps"><li>Business Impact dashboard: sites are up and the host is calm, yet revenue, conversion or leads fall.</li><li>Business alerts fire on the site's resource (conversion, CTA success, confirmation rate).</li><li>Traces: the 502 checkout with the 30 s payment-gateway span; Logs: the matching error with the order id.</li></ol>
+      </section>
+    </div>
+
+    <aside class="card status" id="status">
+      <h2>Activity</h2>
+      <div class="row">
+        <button class="btn ghost" onclick="stopAll()">Stop everything</button>
+        <button class="btn ghost" onclick="setup()" title="Seeds the Demo datasources and sets their alert thresholds. Run once, then again after a few minutes.">Set up LM datasources</button>
+      </div>
+      <div id="scenarios"><p>Nothing running.</p></div>
+      <div class="row" id="health" title="Deliveries to LogicMonitor since the console started"></div>
+      <p style="font-size:12px;color:var(--muted)" id="meta"></p>
+    </aside>
+  </div>
+</main>
+<div id="toast"></div>
+<script>
+const $ = s => document.querySelector(s);
+let cfg = null;
+function toast(m){ const t=$('#toast'); t.textContent=m; t.style.display='block'; clearTimeout(t._h); t._h=setTimeout(()=>t.style.display='none',4000); }
+async function api(path, body){ const r = await fetch(path, body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{}); return r.json(); }
+function selectedSites(){ return [...document.querySelectorAll('#siteList input:checked')].map(i=>i.value); }
+async function startWeb(mode){ const r = await api('/api/start',{kind:'web',params:{mode, sites:selectedSites(), minutes:+$('#minutes').value||10}}); toast(`Started ${r.name} (${r.duration/60} min)`); refresh(); }
+async function startInfra(c,name){ const r = await api('/api/start',{kind:'infra',name,params:{case:c, minutes:+$('#minutes').value||10}}); toast(`Started ${r.name}`); refresh(); }
+async function startBiz(c,name){ const r = await api('/api/start',{kind:'business',name,params:{case:c, minutes:+$('#minutes').value||10}}); toast(`Started ${r.name}`); refresh(); }
+async function stopAll(){ await api('/api/stop',{}); toast('Stopped all scenarios'); refresh(); }
+async function setup(){ toast('Seeding datasources...'); const r = await api('/api/setup',{}); $('#scenarios').insertAdjacentHTML('afterbegin', `<div class="sc"><div class="name">LM setup</div><pre>${r.log.join('\n')}</pre></div>`); }
+async function refresh(){
+  const s = await api('/api/status'); cfg = s;
+  if(!$('#siteList').children.length){ $('#siteList').innerHTML = s.sites.map(x=>`<label><input type="checkbox" value="${x.id}" checked> ${x.label} <span class="mono" style="color:var(--muted)">${x.container}</span></label>`).join(''); }
+  document.querySelectorAll('[data-k]').forEach(el=>{ const v = el.dataset.k.split('.').reduce((o,k)=>o&&o[k], s); if(v!=null) el.textContent = v; });
+  if(s.title) document.title = s.title + ' demo console';
+  ['checkout','cta','signup'].forEach(k=>{ const el=$('#case-'+k); if(el) el.style.display = s.business[k] ? '' : 'none'; });
+  if(!s.host.resource) $('#infra').style.display = 'none';
+  $('#portalLink').href = s.portal; $('#dashTraces').href = s.dashboards.traces; $('#dashLogs').href = s.dashboards.logs; $('#dashAlerts').href = s.dashboards.alerts;
+  [['#dashWeb','web'],['#dashInfra','infra'],['#dashBiz','business'],['#dashMarketing','marketing'],['#dashExec','exec']].forEach(([id,k])=>{ const a=$(id); if(s.dashboards[k]){ a.href=s.dashboards[k]; a.style.display=''; } else a.style.display='none'; });
+  const h = s.health||{}; $('#health').innerHTML = ['traces','logs','metrics'].map(c=>{ const x=h[c]; if(!x) return `<span class="pill done">${c}: idle</span>`; return `<span class="pill ${x.fail?'bad':'run'}" title="${x.last||''}">${c}: ${x.ok} ok${x.fail?` / ${x.fail} failed`:''}</span>`; }).join(' ');
+  $('#meta').textContent = `Traces to ${s.lmotel}; logs and metrics to ${s.portal}/rest`;
+  const box = $('#scenarios');
+  if(!s.scenarios.length){ box.innerHTML='<p>Nothing running.</p>'; return; }
+  box.innerHTML = s.scenarios.map(x=>`<div class="sc ${x.running?'':'done'}"><div class="name"><span>${x.name}</span><span class="pill ${x.running?'run':'done'}">${x.running?'running':'done'}</span></div>
+    <div class="bar"><i style="width:${Math.round(x.progress*100)}%"></i></div>
+    <div>${x.sent.spans} spans &middot; ${x.sent.logs} logs &middot; ${x.sent.metrics} metric pushes${x.sent.errors?` &middot; <b style="color:var(--crit)">${x.sent.errors} errors</b>`:''}
+    ${x.running?`<button class="btn ghost" style="float:right;padding:2px 8px" onclick="api('/api/stop',{id:'${x.id}'}).then(refresh)">stop</button>`:''}</div>
+    <pre>${x.log.join('\n')}</pre></div>`).join('');
+}
+document.querySelectorAll('.rail .item').forEach(el=>el.onclick=()=>{ document.querySelectorAll('.rail .item').forEach(i=>i.classList.remove('active')); el.classList.add('active'); document.getElementById(el.dataset.go).scrollIntoView({behavior:'smooth',block:'start'}); });
+setInterval(()=>{ $('#clock').textContent = new Date().toLocaleTimeString(); }, 1000);
+refresh(); setInterval(refresh, 5000);
+</script>
+</body>
+</html>
